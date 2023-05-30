@@ -11,12 +11,13 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Google.Protobuf.WellKnownTypes;
 
 namespace Project
 {
     internal class Config
     {
-        private static string connectionString = "Server=localhost;database=gudang;uid=root;Pwd=;";
+        private static string connectionString = "Server=localhost;database=tabenori;uid=root;Pwd=;";
         private static MySqlConnection con = new MySqlConnection(connectionString);
 
         /*SqlConnection con = new SqlConnection(@"Data Source=.\SQLEXPRESS;Initial Catalog=projectdb;Integrated Security=True;Pooling=False");*/
@@ -30,7 +31,7 @@ namespace Project
         public ArrayList ReadUser()
         {
             con.Open();
-            string query = "SELECT * FROM dbo.[User];";
+            string query = "SELECT * FROM user;";
             var cmd = new MySqlCommand(query, con);
             var reader = cmd.ExecuteReader();
 
@@ -38,7 +39,7 @@ namespace Project
             if (!reader.HasRows)
             {
                 reader.Close();
-                string query2 = "truncate table dbo.[User]";
+                string query2 = "set foreign_key_checks = 0; truncate user; set foreign_key_checks = 1";
                 var cmd2 = new MySqlCommand(query2, con);
                 var reader2 = cmd2.ExecuteReader();
                 reader2.Close();
@@ -51,7 +52,7 @@ namespace Project
         public void AddValidateUser(User user)
         {
             con.Open();
-            string query1 = "SELECT * FROM dbo.[User] where username = '" + user.username + "'";
+            string query1 = "SELECT * FROM user where username = '" + user.username + "'";
             var cmd = new MySqlCommand(query1, con);
             var reader = cmd.ExecuteReader();
             if(reader.Read())
@@ -63,7 +64,7 @@ namespace Project
             {
                 MessageBox.Show("Username is available!");
                 reader.Close();
-                MySqlCommand query = new MySqlCommand($"SET IDENTITY_INSERT dbo.[User] OFF; insert into dbo.[User](fullname, bdate, address, username, password) values(@fullname, @bdate, @address, @username, @password);", con);
+                MySqlCommand query = new MySqlCommand("insert into user(fullname, bdate, address, username, password) values(@fullname, @bdate, @address, @username, @password);", con);
 
                 query.Parameters.AddWithValue("@fullname", user.fullname);
                 query.Parameters.AddWithValue("@bdate", user.bdate);
@@ -80,7 +81,7 @@ namespace Project
         public void LoginUser(string username, string password, Index index)
         {
             con.Open();
-            MySqlCommand query = new MySqlCommand("SELECT * FROM dbo.[User] where username = '" + username + "' and password = '" + password + "' ", con);
+            MySqlCommand query = new MySqlCommand("SELECT * FROM user where username = '" + username + "' and password = '" + password + "' ", con);
             MySqlDataReader dr = query.ExecuteReader();
             if (username != string.Empty || password != string.Empty)
             {
@@ -113,7 +114,7 @@ namespace Project
         public void History(DataGridView historyOrder, string selectedUserID)
         {
             con.Open();
-            MySqlCommand query = new MySqlCommand("select * from dbo.History where user_id = '" + selectedUserID + "'", con);
+            MySqlCommand query = new MySqlCommand("select * from history where user_id = '" + selectedUserID + "'", con);
             dt = new DataTable();
             MySqlDataAdapter da = new MySqlDataAdapter(query);
             da.Fill(dt);
@@ -145,7 +146,7 @@ namespace Project
             con.Open();
             if (selectedMenu == onigiri1.Texts)
             {
-                MySqlCommand query1 = new MySqlCommand("SELECT * FROM dbo.DaftarMenu WHERE nama_makanan = '" + selectedMenu + "'", con);
+                MySqlCommand query1 = new MySqlCommand("SELECT * FROM daftarmenu WHERE nama_makanan = '" + selectedMenu + "'", con);
                 DbDataReader dr = query1.ExecuteReader();
                 if (dr.Read())
                 {
@@ -163,7 +164,7 @@ namespace Project
             }
             else if (selectedMenu == onigiri2.Texts)
             {
-                MySqlCommand query1 = new MySqlCommand("SELECT * FROM dbo.DaftarMenu WHERE nama_makanan = '" + selectedMenu + "'", con);
+                MySqlCommand query1 = new MySqlCommand("SELECT * FROM daftarmenu WHERE nama_makanan = '" + selectedMenu + "'", con);
                 DbDataReader dr = query1.ExecuteReader();
                 if (dr.Read())
                 {
@@ -181,7 +182,7 @@ namespace Project
             }
             else if (selectedMenu == onigiri3.Texts)
             {
-                MySqlCommand query1 = new MySqlCommand("SELECT * FROM dbo.DaftarMenu WHERE nama_makanan = '" + selectedMenu + "'", con);
+                MySqlCommand query1 = new MySqlCommand("SELECT * FROM daftarmenu WHERE nama_makanan = '" + selectedMenu + "'", con);
                 DbDataReader dr = query1.ExecuteReader();
                 if (dr.Read())
                 {
@@ -199,7 +200,7 @@ namespace Project
             }
             else if (selectedMenu == onigiri4.Texts)
             {
-                MySqlCommand query1 = new MySqlCommand("SELECT * FROM dbo.DaftarMenu WHERE nama_makanan = '" + selectedMenu + "'", con);
+                MySqlCommand query1 = new MySqlCommand("SELECT * FROM daftarmenu WHERE nama_makanan = '" + selectedMenu + "'", con);
                 DbDataReader dr = query1.ExecuteReader();
                 if (dr.Read())
                 {
@@ -222,11 +223,11 @@ namespace Project
         {
             con.Open();
 
-            DateTimeOffset ts = (DateTimeOffset)DateTime.Now;
+            DateTime ts = DateTime.Now;
 
             for (int i = 0; i < viewOrder.Rows.Count; i++)
             {
-                MySqlCommand query = new MySqlCommand("INSERT INTO dbo.History(no_makanan, user_id, nama_makanan, jumlah, harga, total, waktu) VALUES (@no_makanan, @user_id, @nama_makanan, @jumlah, @harga, @total, @waktu)", con);
+                MySqlCommand query = new MySqlCommand("INSERT INTO history(no_makanan, user_id, nama_makanan, jumlah, harga, total, waktu) VALUES (@no_makanan, @user_id, @nama_makanan, @jumlah, @harga, @total, @waktu)", con);
 
                 query.Parameters.Add("@no_makanan", MySqlDbType.Int32).Value = viewOrder.Rows[i].Cells[0].Value;
                 query.Parameters.Add("@user_id", MySqlDbType.Int32).Value = Int32.Parse(selectedUserID);
@@ -234,7 +235,7 @@ namespace Project
                 query.Parameters.Add("@jumlah", MySqlDbType.Int32).Value = viewOrder.Rows[i].Cells[2].Value;
                 query.Parameters.Add("@harga", MySqlDbType.Int32).Value = viewOrder.Rows[i].Cells[3].Value;
                 query.Parameters.Add("@total", MySqlDbType.Int32).Value = viewOrder.Rows[i].Cells[4].Value;
-                query.Parameters.Add("waktu", MySqlDbType.DateTime).Value = ts;
+                query.Parameters.Add("waktu", MySqlDbType.Timestamp).Value = ts;
 
                 query.ExecuteNonQuery();
 
