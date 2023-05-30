@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Data.Common;
-using System.Data.SqlClient;
+using MySql.Data.MySqlClient;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
@@ -16,10 +16,13 @@ namespace Project
 {
     internal class Config
     {
-        SqlConnection con = new SqlConnection(@"Data Source=.\SQLEXPRESS;Initial Catalog=projectdb;Integrated Security=True;Pooling=False");
+        private static string connectionString = "Server=localhost;database=gudang;uid=root;Pwd=;";
+        private static MySqlConnection con = new MySqlConnection(connectionString);
+
+        /*SqlConnection con = new SqlConnection(@"Data Source=.\SQLEXPRESS;Initial Catalog=projectdb;Integrated Security=True;Pooling=False");*/
         DataTable dt = new DataTable();
 
-        public SqlConnection GetConnection() {
+        public MySqlConnection GetConnection() {
             return con;
         }
 
@@ -28,7 +31,7 @@ namespace Project
         {
             con.Open();
             string query = "SELECT * FROM dbo.[User];";
-            var cmd = new SqlCommand(query, con);
+            var cmd = new MySqlCommand(query, con);
             var reader = cmd.ExecuteReader();
 
             ArrayList data = new ArrayList();
@@ -36,7 +39,7 @@ namespace Project
             {
                 reader.Close();
                 string query2 = "truncate table dbo.[User]";
-                var cmd2 = new SqlCommand(query2, con);
+                var cmd2 = new MySqlCommand(query2, con);
                 var reader2 = cmd2.ExecuteReader();
                 reader2.Close();
             }
@@ -49,7 +52,7 @@ namespace Project
         {
             con.Open();
             string query1 = "SELECT * FROM dbo.[User] where username = '" + user.username + "'";
-            var cmd = new SqlCommand(query1, con);
+            var cmd = new MySqlCommand(query1, con);
             var reader = cmd.ExecuteReader();
             if(reader.Read())
             {
@@ -60,7 +63,7 @@ namespace Project
             {
                 MessageBox.Show("Username is available!");
                 reader.Close();
-                SqlCommand query = new SqlCommand($"SET IDENTITY_INSERT dbo.[User] OFF; insert into dbo.[User](fullname, bdate, address, username, password) values(@fullname, @bdate, @address, @username, @password);", con);
+                MySqlCommand query = new MySqlCommand($"SET IDENTITY_INSERT dbo.[User] OFF; insert into dbo.[User](fullname, bdate, address, username, password) values(@fullname, @bdate, @address, @username, @password);", con);
 
                 query.Parameters.AddWithValue("@fullname", user.fullname);
                 query.Parameters.AddWithValue("@bdate", user.bdate);
@@ -77,8 +80,8 @@ namespace Project
         public void LoginUser(string username, string password, Index index)
         {
             con.Open();
-            SqlCommand query = new SqlCommand("SELECT * FROM dbo.[User] where username = '" + username + "' and password = '" + password + "' ", con);
-            SqlDataReader dr = query.ExecuteReader();
+            MySqlCommand query = new MySqlCommand("SELECT * FROM dbo.[User] where username = '" + username + "' and password = '" + password + "' ", con);
+            MySqlDataReader dr = query.ExecuteReader();
             if (username != string.Empty || password != string.Empty)
             {
                 if (dr.Read())
@@ -110,9 +113,9 @@ namespace Project
         public void History(DataGridView historyOrder, string selectedUserID)
         {
             con.Open();
-            SqlCommand query = new SqlCommand("select * from dbo.History where user_id = '" + selectedUserID + "'", con);
+            MySqlCommand query = new MySqlCommand("select * from dbo.History where user_id = '" + selectedUserID + "'", con);
             dt = new DataTable();
-            SqlDataAdapter da = new SqlDataAdapter(query);
+            MySqlDataAdapter da = new MySqlDataAdapter(query);
             da.Fill(dt);
             con.Close();
             historyOrder.DataSource = dt;
@@ -142,7 +145,7 @@ namespace Project
             con.Open();
             if (selectedMenu == onigiri1.Texts)
             {
-                SqlCommand query1 = new SqlCommand("SELECT * FROM dbo.DaftarMenu WHERE nama_makanan = '" + selectedMenu + "'", con);
+                MySqlCommand query1 = new MySqlCommand("SELECT * FROM dbo.DaftarMenu WHERE nama_makanan = '" + selectedMenu + "'", con);
                 DbDataReader dr = query1.ExecuteReader();
                 if (dr.Read())
                 {
@@ -160,7 +163,7 @@ namespace Project
             }
             else if (selectedMenu == onigiri2.Texts)
             {
-                SqlCommand query1 = new SqlCommand("SELECT * FROM dbo.DaftarMenu WHERE nama_makanan = '" + selectedMenu + "'", con);
+                MySqlCommand query1 = new MySqlCommand("SELECT * FROM dbo.DaftarMenu WHERE nama_makanan = '" + selectedMenu + "'", con);
                 DbDataReader dr = query1.ExecuteReader();
                 if (dr.Read())
                 {
@@ -178,7 +181,7 @@ namespace Project
             }
             else if (selectedMenu == onigiri3.Texts)
             {
-                SqlCommand query1 = new SqlCommand("SELECT * FROM dbo.DaftarMenu WHERE nama_makanan = '" + selectedMenu + "'", con);
+                MySqlCommand query1 = new MySqlCommand("SELECT * FROM dbo.DaftarMenu WHERE nama_makanan = '" + selectedMenu + "'", con);
                 DbDataReader dr = query1.ExecuteReader();
                 if (dr.Read())
                 {
@@ -196,7 +199,7 @@ namespace Project
             }
             else if (selectedMenu == onigiri4.Texts)
             {
-                SqlCommand query1 = new SqlCommand("SELECT * FROM dbo.DaftarMenu WHERE nama_makanan = '" + selectedMenu + "'", con);
+                MySqlCommand query1 = new MySqlCommand("SELECT * FROM dbo.DaftarMenu WHERE nama_makanan = '" + selectedMenu + "'", con);
                 DbDataReader dr = query1.ExecuteReader();
                 if (dr.Read())
                 {
@@ -223,15 +226,15 @@ namespace Project
 
             for (int i = 0; i < viewOrder.Rows.Count; i++)
             {
-                SqlCommand query = new SqlCommand("INSERT INTO dbo.History(no_makanan, user_id, nama_makanan, jumlah, harga, total, waktu) VALUES (@no_makanan, @user_id, @nama_makanan, @jumlah, @harga, @total, @waktu)", con);
+                MySqlCommand query = new MySqlCommand("INSERT INTO dbo.History(no_makanan, user_id, nama_makanan, jumlah, harga, total, waktu) VALUES (@no_makanan, @user_id, @nama_makanan, @jumlah, @harga, @total, @waktu)", con);
 
-                query.Parameters.Add("@no_makanan", SqlDbType.Int).Value = viewOrder.Rows[i].Cells[0].Value;
-                query.Parameters.Add("@user_id", SqlDbType.Int).Value = Int32.Parse(selectedUserID);
-                query.Parameters.Add("@nama_makanan", SqlDbType.VarChar).Value = viewOrder.Rows[i].Cells[1].Value;
-                query.Parameters.Add("@jumlah", SqlDbType.Int).Value = viewOrder.Rows[i].Cells[2].Value;
-                query.Parameters.Add("@harga", SqlDbType.Int).Value = viewOrder.Rows[i].Cells[3].Value;
-                query.Parameters.Add("@total", SqlDbType.Int).Value = viewOrder.Rows[i].Cells[4].Value;
-                query.Parameters.Add("waktu", SqlDbType.DateTimeOffset).Value = ts;
+                query.Parameters.Add("@no_makanan", MySqlDbType.Int32).Value = viewOrder.Rows[i].Cells[0].Value;
+                query.Parameters.Add("@user_id", MySqlDbType.Int32).Value = Int32.Parse(selectedUserID);
+                query.Parameters.Add("@nama_makanan", MySqlDbType.VarChar).Value = viewOrder.Rows[i].Cells[1].Value;
+                query.Parameters.Add("@jumlah", MySqlDbType.Int32).Value = viewOrder.Rows[i].Cells[2].Value;
+                query.Parameters.Add("@harga", MySqlDbType.Int32).Value = viewOrder.Rows[i].Cells[3].Value;
+                query.Parameters.Add("@total", MySqlDbType.Int32).Value = viewOrder.Rows[i].Cells[4].Value;
+                query.Parameters.Add("waktu", MySqlDbType.DateTime).Value = ts;
 
                 query.ExecuteNonQuery();
 
